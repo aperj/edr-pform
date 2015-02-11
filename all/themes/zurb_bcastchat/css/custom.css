@@ -1,0 +1,8 @@
+article .image {
+  float: left;
+  margin: 10px 10px 10px 0px;
+}
+.dd_after .ddTitle {
+    padding: 1px;
+    height: 23px;
+}

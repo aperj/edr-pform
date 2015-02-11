@@ -1,0 +1,12 @@
+name = "Migrate sf-and-fantasy data""
+description = "Module to migrate site content between drupal sites"
+package = "sf-and-fantasy"
+core = 7.x
+dependencies[] = migrate
+#  include the files that contain your Migrate classes
+files[] = sfandfan_migrate.migrate.inc
+files[] = migrate_books.inc
+files[] = migrate_terms.inc
+files[] = migrate_authors.inc
+files[] = migrate_series.inc
+

@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Set up db tables for openlibrary.module
+ */
+
+/**
+ * Open Library API
+ * Copyright 2009 Matthew Davidson.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function openlibrary_install() {
+  drupal_install_schema('openlibrary');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function openlibrary_uninstall() {
+  drupal_uninstall_schema('openlibrary');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function openlibrary_schema() {
+  $schema['cache_openlibrary'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_openlibrary']['description'] = 'Cache table for the Open Library API module to store the result of recent HTTP requests.';
+
+  return $schema;
+}

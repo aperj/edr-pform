@@ -1,0 +1,10 @@
+name = Open Library Filter
+description = "An input filter that provides a wiki-like syntax for embedding book data from openlibrary.org."
+package = Other
+dependencies[] = openlibrary
+
+; Information added by drupal.org packaging script on 2011-02-25
+core = "7.x"
+project = "edesigns"
+datestamp = "1298619835"
+

@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * An input filter that provides a wiki-like syntax for embedding book data from openlibrary.org.
+ *
+ * Based on bookpost.module http://drupal.org/project/bookpost
+ */
+
+/**
+ * Open Library Filter
+ * Copyright 2009 Matthew Davidson.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Implementation of hook_filter_tips().
+ */
+function openlibrary_filter_filter_tips($delta, $format, $long = FALSE) {
+  switch ($delta) {
+    case 0:
+      if ($long) {
+        return t('Wiki-like syntax for Open Library editions. An ISBN or Open Library ID URI between double brackets (eg. [[isbn:9781430209898|title]], [[olid:OL23226198M|block]]) will return book information from the Open Library');
+      }
+      else {
+        return t('Wiki-like syntax for Open Library editions eg. [[isbn:9781430209898|title]], [[olid:OL23226198M|block]]');
+      }
+      break;
+  }
+}
+ 
+/**
+ * Implementation of hook_filter().
+ */
+function openlibrary_filter_filter($op, $delta = 0, $format = -1, $text ='') {
+  switch ($op) {
+    case 'list':
+      return array(0 => t('Open Library Filter'));
+
+    case 'description':
+      return t('An ISBN or Open Library ID URI between double brackets (eg. [[isbn:9781430209898|title]], [[olid:OL23226198M|block]]) will return book information from the Open Library');
+
+    case 'no cache':
+      return TRUE;
+
+    case 'prepare':
+      return $text;
+
+    case 'process':
+      preg_match_all('/\[\[(.*):(.*)\]\]/U', $text, $match);
+      
+      //dsm($match);
+      $seen = array();
+      for ($i = 0; $i < count($match); $i++) {
+        if (in_array($match[0][$i], $seen) || !$match[0][$i]) {
+          continue;
+        }
+        else {
+          $seen[] = $match[0][$i];
+        }
+        
+        $type = $match[1][$i];
+        list($id, $style) = explode('|', $match[2][$i]);
+        //dsm(array($id, $type, $style));
+        $replace = theme('openlibrary_edition', $id, $type, $style);
+        $text = str_replace($match[0][$i], $replace, $text);
+      }
+            
+      return $text;
+  }
+}
+

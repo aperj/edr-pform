@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * A CCK ISBN Field formatter which displays edition information from openlibrary.org.
+ *
+ * Based on bookpost.module http://drupal.org/project/bookpost
+ */
+
+/**
+ * Open Library Filter
+ * Copyright 2009 Matthew Davidson.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Implementation of hook_theme().
+ */
+function openlibrary_isbn_formatter_theme($existing, $type, $theme, $path) {
+  return array(
+    'openlibrary_isbn_formatter_formatter_title' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'openlibrary_isbn_formatter_formatter_block' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function openlibrary_isbn_formatter_field_formatter_info() {
+  return array(
+    'title' => array(
+      'label' => t('Open Library: Title only'),
+      'field types' => array('isbn'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    'block' => array(
+      'label' => t('Open Library: Full block'),
+      'field types' => array('isbn'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+  );
+}
+
+/**
+ * Theme function for 'title' display.
+ */
+function theme_openlibrary_isbn_formatter_formatter_title($element) {
+  if ($element['#item']['value']) {
+    return theme('openlibrary_edition', $element['#item']['value'], 'isbn', $style = 'title');
+  }
+}
+
+/**
+ * Theme function for 'block' display.
+ */
+function theme_openlibrary_isbn_formatter_formatter_block($element) {
+  if ($element['#item']['value']) {
+    return theme('openlibrary_edition', $element['#item']['value'], 'isbn', $style = 'block');
+  }
+}
+

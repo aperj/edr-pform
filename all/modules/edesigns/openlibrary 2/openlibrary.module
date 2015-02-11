@@ -1,0 +1,316 @@
+<?php
+
+/**
+ * @file
+ * Provides a set of functions for querying openlibrary.org.
+ */
+
+/**
+ * Open Library API
+ * Copyright 2009 Matthew Davidson.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+define(OPENLIBRARY_RESTFUL_API_ROOT, 'http://openlibrary.org');
+define(OPENLIBRARY_COVERS_API_ROOT, 'http://covers.openlibrary.org');
+define(OPENLIBRARY_CACHE_PERIOD, 60 * 60 * 24); // in seconds. TODO: Should be configurable
+define(OPENLIBRARY_COVERS_FILE_PATH, 'openlibrary/covers'); // TODO: Should be configurable
+
+/**
+ * Implementation of hook_theme().
+ *
+ * Many developers will be able to achieve what they want with just these theme functions.
+ */
+function openlibrary_theme() {
+  return array(
+    'openlibrary_edition' => array(
+      'arguments' => array(
+        'id' => NULL,
+        'id_type' => 'isbn',
+        'style' => 'title',
+      ),
+      'file' => 'openlibrary.theme.inc',
+    ),
+    'openlibrary_edition_title' => array(
+      'arguments' => array(
+        'edition' => NULL,
+        'link' => TRUE,
+      ),
+      'file' => 'openlibrary.theme.inc',
+    ),
+    'openlibrary_edition_cover' => array(
+      'arguments' => array(
+        'edition' => NULL,
+        'size' => 'M',
+        'link' => TRUE,
+      ),
+      'file' => 'openlibrary.theme.inc',
+    ),
+    'openlibrary_edition_block' => array(
+      'arguments' => array(
+        'edition' => NULL,
+        'show_cover' => TRUE,
+        'link' => TRUE,
+      ),
+      'template' => 'openlibrary-edition-block',
+    ),
+    'openlibrary_author' => array(
+      'arguments' => array(
+        'id' => NULL,
+        'style' => 'name',
+      ),
+      'file' => 'openlibrary.theme.inc',
+    ),
+    'openlibrary_author_name' => array(
+      'arguments' => array(
+        'author' => NULL,
+        'link' => TRUE,
+      ),
+      'file' => 'openlibrary.theme.inc',
+    ),
+    'openlibrary_author_image' => array(
+      'arguments' => array(
+        'author' => NULL,
+        'size' => 'M',
+        'link' => TRUE,
+      ),
+      'file' => 'openlibrary.theme.inc',
+    ),
+    'openlibrary_author_block' => array(
+      'arguments' => array(
+        'author' => NULL,
+        'show_image' => TRUE,
+        'link' => TRUE,
+      ),
+      'template' => 'openlibrary-author-block',
+    ),
+  );
+}
+
+
+/**
+ * 'End-user' functions. You probably want to use these in your module.
+ */
+
+/**
+ * Get an edition from the Open Library server.
+ *
+ * @param $id
+ *   A string identifier. This must be a string, even if it's all numeric digits.
+ *
+ * @param $type
+ *   The type of identifier. Possible values are:
+ *    - 'isbn': We automatically identify whether it's an isbn_10 or isbn_13 number (tricky, that)
+ *    - 'key': Not a lot of point using this, as you might as well call openlibrary_get_content().
+ *    - 'olid': Affixes the leading '/b/' to make a key out of an olid before making the request. Whoop-de-do.
+ *    - TODO: Other identifiers
+ */
+function openlibrary_get_edition($id, $type = 'isbn') {
+  $args = array(
+    'type' => '/type/edition',
+  );
+
+  switch ($type) {
+    case 'key':
+      $key = $id;
+    case 'olid':
+      if (preg_match('/^OL/', $id)) {
+        $key = '/b/'. $id;
+      }
+      break;
+    case 'isbn':
+      $id = str_replace("-", "", $id);
+      $id = str_replace(" ", "", $id);
+
+      if (drupal_strlen($id) == 13) {
+        $args['isbn_13'] = $id;
+      }
+      elseif (drupal_strlen($id) == 10) {
+        $args['isbn_10'] = $id;
+      }
+      else {
+        drupal_set_message(t('ISBN numbers must have either 13 or 10 digits. Number provided: %id', array('%id' => $id)), 'warning');
+        return;
+      }
+      $results = openlibrary_query($args);
+      $key = $results[0]->key;
+      break;
+  }
+  
+  if ($key) {
+    return openlibrary_get_content($key);
+  }
+}
+
+
+/**
+ * Get author info from the Open Library server.
+ *
+ * Doesn't add much to openlibrary_get_content(), as we can only really rely on OLIDs as identifiers.
+ * Included mainly because the existence of openlibrary_get_edition() implies an openlibrary_get_author().
+ *
+ * @param $id
+ *   An author OLID.
+ */
+function openlibrary_get_author($id) {
+  $key = '/a/'.$id;
+  return openlibrary_get_content($key);
+}
+
+
+
+
+
+/**
+ * The basics, just a wrapper for the bare API
+ */
+
+/**
+ * Gets an Open Library edition or author object.
+ *
+ * See http://openlibrary.org/dev/docs/restful_api#content
+ *
+ * @param $key
+ *   An Open Library edition or author key. eg. '/b/OL8682804M', '/a/OL2987202A'
+ */
+function openlibrary_get_content($key) {
+  $path = $key .'.json'; 
+  global $user;
+  if ($user->uid==1) {
+      _prepost('Path: ' . $path);
+  }
+  return _openlibrary_cached_request($path);
+}
+
+
+/**
+ * Query the Open Library database.
+ *
+ * See http://openlibrary.org/dev/docs/restful_api#query
+ *
+ * @param $args
+ *   An array of query arguments. At the very least, you will need to set $args['type'] to something like '/type/edition'.
+ */
+function openlibrary_query($args) {
+  $path = '/query.json?'. drupal_query_string_encode($args);
+  return _openlibrary_cached_request($path);
+}
+
+/**
+ * Get the change history of an Open Library object.
+ *
+ * See http://openlibrary.org/dev/docs/restful_api#history
+ *
+ * @param $key
+ *   An Open Library edition or author key. eg. '/b/OL8682804M', '/a/OL2987202A'
+ */
+function openlibrary_get_history($key) {
+  $path = $key .'.json?m=history';
+  return _openlibrary_cached_request($path);
+}
+
+
+/**
+ * Get an Open Library edition cover image.
+ *
+ * See http://openlibrary.org/dev/docs/api/covers
+ *
+ * @param $value
+ *   A string identifier. This must be a string, even if it's all numeric digits.
+ *
+ * @param $key
+ *   The type of identifier. Accepts same values as the $type argument in openlibrary_get_edition().
+ * 
+ * @param $type
+ *   The type of object. 'b' for an edition, 'a' for an author.
+ * 
+ * @return
+ *   If an image exists, fetches a copy of the image and returns a URI for the local copy.
+ */
+function openlibrary_get_cover($value, $key = 'olid', $type = 'b') {
+  $cover_path = $type .'/'. $key;
+  $cover_filename = $value .'-L.jpg'; // Always downloading just the largest, scaling locally, as that's nicer than downloading all three sizes.
+  $remote_url = OPENLIBRARY_COVERS_API_ROOT .'/'. $cover_path .'/'. $cover_filename .'?default=false';
+  
+  // assemble the directory path, creating subdirectories as necessary
+  $local_path = file_create_path();
+  
+  foreach (explode('/', OPENLIBRARY_COVERS_FILE_PATH .'/'. $cover_path) as $dirname) {
+    $local_path = $local_path .'/'. $dirname;
+    if (!file_check_directory($local_path, FILE_CREATE_DIRECTORY)) {
+      drupal_set_message('Could not create local directory: '. $local_path .' Please check your directory permissions.', 'error');
+      return FALSE;
+    }
+  }
+
+  //If a local file already exists, and if it's not older than time() - OPENLIBRARY_CACHE_PERIOD, just return local file path/name
+  if (file_exists($local_path .'/'. $cover_filename) && (filectime($local_path .'/'. $cover_filename) > (time() - OPENLIBRARY_CACHE_PERIOD))) {
+    return file_create_url($local_path .'/'. $cover_filename);
+  }
+  
+  $http_result = drupal_http_request($remote_url);
+  if ($http_result->code != 200) {
+    return FALSE;
+  }
+  
+  if (file_save_data($http_result->data, $local_path .'/'. $cover_filename, FILE_EXISTS_REPLACE)) {
+    return file_create_url($local_path .'/'. $cover_filename);
+  }
+  else {
+    drupal_set_message('Could not create local directory: '. $local_path .'/'. $cover_filename .' Please check your directory permissions.', 'error');
+    return FALSE;
+  }
+}
+
+
+/**
+ * Transparently caches requests for OPENLIBRARY_RESTFUL_API_ROOT.
+ *
+ * @param $path
+ *   Request URI minus the OPENLIBRARY_RESTFUL_API_ROOT
+ *
+ * @return
+ *   An Open Library object
+ */
+function _openlibrary_cached_request($path) {
+  if ($cached = cache_get($path, 'cache_openlibrary')) {
+    if ($cached->expire < time()) {
+      cache_clear_all($path, 'cache_openlibrary');
+    }
+    return $cached->data;
+  }
+  else {
+    $json_data = drupal_http_request(OPENLIBRARY_RESTFUL_API_ROOT . $path);
+    $data = json_decode($json_data->data);
+    cache_set($path, $data, 'cache_openlibrary', time() + OPENLIBRARY_CACHE_PERIOD);
+    return $data;
+  }
+}
+
+
+/**
+ * Extracts OLID from edition key.
+ *
+ * @param $key
+ *   An Open Library key string.
+ *
+ * @return
+ *   An OLID identifier
+ */
+function openlibrary_olid_from_key($key) {
+  $key = str_replace('/b/', '', $key);
+  $key = str_replace('/a/', '', $key);
+  return $key;
+}

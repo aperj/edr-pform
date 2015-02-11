@@ -1,0 +1,20 @@
+name = edesigns_bootstrap
+description = Bootstrap subtheme
+version = 0.1
+core = 7.x
+base theme = bootstrap
+
+regions[navigation]     = 'Navigation'
+regions[header]         = 'Top Bar'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[footer]         = 'Footer'
+
+stylesheets[all][] = edesigns_bootstrap_style.css
+stylesheets[all][] = font-awesome.min.css
+
+settings[toggle_name] = 0
+settings[toggle_search] = 1

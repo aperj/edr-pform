@@ -1,0 +1,4 @@
+name = edesigns
+description = edesigns methods.
+package = EDesigns
+core = 7.x

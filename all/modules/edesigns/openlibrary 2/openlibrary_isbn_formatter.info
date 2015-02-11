@@ -1,0 +1,12 @@
+name = Open Library ISBN Formatter
+description = "A CCK ISBN Field formatter which displays edition information from openlibrary.org."
+package = CCK
+dependencies[] = isbn
+dependencies[] = openlibrary
+
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "openlibrary"
+datestamp = "1298619835"
+

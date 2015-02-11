@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Portfolio View feature.
+ */
+
+include_once 'portfolio_view.features.inc';

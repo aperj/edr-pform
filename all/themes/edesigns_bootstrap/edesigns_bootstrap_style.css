@@ -1,0 +1,187 @@
+/* edesigns_bootstrap_style.css */
+
+.view-portfolio .field-name-field-images {
+	display: inline;
+	float: left;
+}
+.view-recent-content ul li {
+	margin-bottom: 20px;
+}
+
+ul {
+	list-style: none;
+	list-style-type: none;
+}
+
+h1.page-header {
+	margin-bottom: 10px;
+}
+ul.portfolio-img li.span3, ul.portfolio-img li.span2 {
+	margin-left: 15px;
+	height: 236px;
+	margin-bottom: 10px;
+}
+
+.portfolio .work {
+	text-align: center;
+	font-size: 12px;
+	margin-top: 0px;
+    padding-bottom: 20px;
+    background: #f8f8f8;
+    background: #f2f1f1;
+    border-bottom: 2px solid #9d426b;
+    color: rgb(136, 136, 136);
+}
+
+.portfolio .work img {
+	height: 106px;
+}
+.portfolio .work p {
+	font-style: italic;
+}
+
+.portfolio {
+    margin-top: 0px;
+}
+
+
+/* ----------------- Image fields for articles ----------------- */
+.node-article .field-type-image, ul .field-views-field-field-image {
+  float: left;
+  margin: 0.5em 1em 1em 0;
+}
+
+.node-article .field-type-image img, .field-views-field-field-image img {
+  display: block;
+  padding: 0 0 10px 0;
+}
+.node-article .field-type-image.field-label-above {
+  margin-top: 0;
+}
+.node-article .field-type-image .field-label {
+  margin-bottom: 0.5em;
+}
+.node-article .field-type-image.field-label-inline .field-label {
+  margin-bottom: 0;
+  line-height: 1;
+}
+/* ----------------- Image fields ----------------- */
+
+/* front page */
+.front h1.page-header, .front article#node-16 footer{
+	display: none;
+}
+.front div#pane-1 {
+	/*
+	background: url('./images/homeBG.jpg') no-repeat fixed 50%-75px transparent;
+	*/
+	background-image: url('./images/homeBG.jpg');
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: 50%-75px;
+	background-color: transparent;
+
+	color: white;
+	height: 1200px;
+	padding: 260px 0px 0px 100px;
+}
+.front div#pane-1 p {
+	margin-left: 40px;
+}
+.front div#pane-2 {
+	/*
+	background: url('./images/secondBG.jpg') no-repeat fixed 50%-0px transparent;
+	background-position: 50% -316px;
+	*/
+
+	background-image: url('./images/secondBG.jpg');
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: 50%-316px;
+	background-color: transparent;
+
+	color: white;
+	height: 1300px;
+	margin: 0px auto;
+	overflow: hidden;
+	padding: 0px;
+padding-top: 200px;
+padding-left: 100px;
+padding-right: 100px;
+}
+.front div#pane-2 a, .front div#pane-3 a {
+  color: #ccc;
+}
+.front div#pane-2 .views-row {
+  margin-left: 40px;
+}
+.front div#pane-3 {
+	background: none repeat scroll 0% 0% rgb(51, 51, 51);
+	background-position: 50% -379px;
+	margin: 0px auto;
+	color: #fff;
+	height: 1200px;
+	padding: 80px 0px 200px;
+padding-left: 100px;
+}
+.front div#pane-4 {
+	/*
+	background: url('./images/thirdBG.jpg') no-repeat fixed 50% 0px transparent;
+	background-position: 50% -529px;
+	*/
+
+	background-image: url('./images/thirdBG.jpg');
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: 50% -529px;
+	background-color: transparent;
+
+
+	color: white;
+	height: 1200px;
+	padding: 100px 0px 0px;
+	padding-left: 100px;
+}
+.front div#pane-4 #badges {
+	margin-top:80px;
+}
+/*
+ * icon slides
+ */
+.box {
+   display: -webkit-box;
+   display: box;
+   display: -moz-box;
+   /*position: absolute;
+   top: 150px;
+   left: 450px;*/
+}
+/*div.box > child { */
+.hbox-element {
+  box-orient: x;
+  margin-right: 40px;
+}
+
+
+@media only screen and (max-width: 1214px) {
+  #pane-1 .box {
+     display: block;
+
+  }
+  #pane-1 .hbox-element {
+    display: block;
+    box-orient:none;
+  }
+}
+
+@media only screen and (max-width: 680px) {
+  #pane-1 #icon-slides {
+     display: none;
+
+  }
+
+}
+
+
+
+

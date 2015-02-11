@@ -1,0 +1,25 @@
+<?php
+
+
+function edesigns_block_info() {
+  // This example comes from node.module.
+  $blocks['edesigns_poweredby'] = array(
+    'info' => t('EDesigns poweredby'),
+  );
+
+  return $blocks;
+}
+
+function edesigns_block_view($delta = '', $args=null) {
+  global $user;
+  $block = array();
+  switch ($delta) {
+    case 'edesigns_poweredby':
+             $block['content'] = 'Powered by <a href="/">EdmondDesigns</a>';
+             $block['subject'] = '';
+             break;
+  }
+
+  return $block;
+
+}

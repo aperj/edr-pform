@@ -1,0 +1,21 @@
+/* edesigns_bootstrap_style.css */
+/*
+@import url("./cosmo9.css");
+@import url("./amelia9.css");
+@import url("./cerrulean9.css");
+@import url("./readable9.css");
+@import url("./journal9.css");
+@import url("./cyborg9.css");
+@import url("./symplex.css");
+@import url("./spruce.css");
+@import url("./superhero.css");
+@import url("./united.css");
+@import url("./spacelab.css");
+@import url("./slate.css");
+*/
+
+.view-portfolio .field-name-field-images {
+	display: inline;
+	float: left;
+}
+

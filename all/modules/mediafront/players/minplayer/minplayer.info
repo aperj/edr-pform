@@ -1,0 +1,14 @@
+name = minPlayer
+description = A minimalistic, HTML5, plugin based media player.
+package = "MediaFront : Players"
+dependencies[] = mediafront
+dependencies[] = html5_media
+core = 7.x
+files[] = minplayer.module
+required = FALSE
+; Information added by drupal.org packaging script on 2013-02-22
+version = "7.x-2.0-rc7"
+core = "7.x"
+project = "mediafront"
+datestamp = "1361543608"
+

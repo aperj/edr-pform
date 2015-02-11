@@ -1,0 +1,312 @@
+<?php
+
+include_once 'isbndb.inc';
+include_once 'librarything.inc';
+include_once 'services.inc';
+ff
+if (!function_exists('_prepost')) {
+    function _prepost($data) { print '<pre>' . print_r($data,TRUE); print '</pre>'; }
+}
+
+global $user;
+if ($user->uid==1) {
+  //sfandfan_download_isbndb_book_content();
+}
+/*
+*
+*/
+function sfandfan_block_info() {
+  // This example comes from node.module.
+  $blocks['edesigns_login'] = array(
+    'info' => t('EDesigns login'),
+    'cache' => DRUPAL_CACHE_PER_USER,
+  );
+  $blocks['edesigns_quizresults'] = array(
+    'info' => t('EDesigns quiz results'),
+    'cache' => DRUPAL_CACHE_PER_USER,
+  );
+
+  return $blocks;
+}
+/*
+*
+*/
+function sfandfan_block_view($delta = '', $args=null) {
+  global $user;
+  $block = array();
+  //The $delta parameter tells us which block is being requested.
+  switch ($delta) {
+    case 'edesigns_login':
+        if ($user->uid) {
+             $block['content'] = 'Welcome ' . theme('username',  array( 'account' => $user));
+             $block['content'] .= "<div style='float:right'>" . l( t("logout"),"user/logout") . "</div>";
+             $block['subject'] = '';
+        }
+        else {
+          $block['content'] = theme_item_list( array( 'items' => array(l(t('Login'),'user/login'),l(t('Register'),'user/register') ),
+                                                      'type' => 'ul' ,
+                                                      'attributes' => array('id' => 'edesigns_login'),
+                                              ));
+          //$fb = fbconnect_block_view('fbconnect_login');
+          //$block['content'] .= '<div class="clearbefore"> OR </div>' . $fb['content'];
+          $block['subject'] = t('Join Us');
+        }
+        break;
+        case 'edesigns_quizresults':
+              module_load_include('inc', 'quiz', 'quiz.pages');
+              $block['subject'] = 'Your Quiz Results';
+              $block['content'] = quiz_get_user_results($args[0]);
+              break;
+    }
+    return $block;
+    /*
+    $elements = drupal_get_form('user_login_block');
+
+    /
+      do all your rendering stuff here
+      drupal_render seems to add html to the elements array
+      and instead of printing what is returned from drupal_render
+      you can use the added html in ['#children'] elements of the arrays
+      to build the form in the order you want.
+    /
+    $rendered = drupal_render($elements);
+
+    // to see what you have to work with
+    // print "<pre>ELEMENTS: " . print_r($elements,1) . "</pre>";
+
+    $output  = '<form action="' . $elements['#action'] .
+                              '" method="' . $elements['#method'] .
+                              '" id="' . $elements['#id'] .
+                              '" accept-charset="UTF-8"><div>';
+
+    $output .= $elements['name']['#children'];
+    $output .= $elements['pass']['#children'];
+    $output .= $elements['form_build_id']['#children'];
+    $output .= $elements['form_id']['#children'];
+    $output .= $elements['actions']['#children'];
+    $output .= $elements['links']['#children'];
+    $output .= '</div></form>';
+
+    print $output;
+    */
+}
+/**
+ * template_preprocess: amazon_item.
+ */
+function sfandfan_preprocess_amazon_item(&$variables, $theme_type) {
+
+  $item = $variables['item'];
+  // Do a quick cycle through the simple keys on the item, filter_xss() them,
+  // and stick them in the variables collection.
+  foreach ($item as $key => $value) {
+    if (is_string($value)) {
+      $variables[$key] = filter_xss($value);
+    }
+  }
+
+  $variables['type'] = _amazon_clean_type($item['producttypename']);
+  $variables['detailpageurl'] = check_url($item['detailpageurl']);
+  $variables['editorialreview'] = !empty($item['editorialreviews']) ? filter_xss_admin($item['editorialreviews'][0]['content']) : '';
+  $variables['customerreviews_iframe'] = !empty($item['customerreviews_iframe']) ? check_url($item['customerreviews_iframe']) : '';
+
+  $variables['invalid_asin'] = !empty($item['invalid_asin']) ? 1 : 0;
+
+  $variables['detailpageurl'] = check_url($variables['detailpageurl']);
+
+  if (!empty($variables['customerreviews'])) {
+    foreach($variables['customerreviews'] as $key => $review) {
+      $variables['customerreviews'][$key] = filter_xss($variables['customerreviews'][$key]);
+    }
+  }
+  $variables['invalid_asin'] = !empty($variables['invalid_asin']) ? 1 : 0;
+
+  if (!empty($variables['publicationdate'])) {
+    $date = explode('-', $variables['publicationdate']);
+    $variables['publicationyear'] = check_plain($date[0]);
+  }
+  else {
+    $variables['publicationyear'] = '';
+  }
+
+  // Handle participants and types.
+  if (isset($item['participants'])) {
+    $variables['participants'] = filter_xss(filter_xss(implode(', ', $item['participants'])));
+    $participant_types = preg_split('/,/', AMAZON_PARTICIPANT_TYPES);
+
+    foreach ($participant_types as $participant_type) {
+      $participant_type = strtolower($participant_type);
+      if (!empty($item[$participant_type])) {
+        if (is_string($item[$participant_type])) {
+          $variables[$participant_type] = filter_xss($item[$participant_type]);
+        }
+        else {
+          $variables[$participant_type] = filter_xss(implode(', ', $item[$participant_type]));
+        }
+      }
+    }
+  }
+
+  $variables += array(
+    'participants' => '',
+    'director' => '',
+    'actor' => '',
+    'artist' => '',
+    'author' => '',
+  );
+
+  // Handle supported image resolutions.
+  if (isset($item['imagesets'])) {
+    foreach ($item['imagesets'] as $key => $image) {
+      $variables[$key] = theme('image', array('path' => $image['url'], 'alt' => t('Image of') . ' ' . strip_tags($item['title']), 'title' => strip_tags($item['title']), 'attributes' => array('height' => $image['height'], 'width' => $image['width']), 'getsize' => FALSE));
+      $variables["{$key}url"] = check_url($image['url']);
+      $variables["{$key}height"] = check_plain($image['height']);
+      $variables["{$key}width"] = check_plain($image['width']);
+    }
+  }
+  $variables['image'] = !empty($variables['mediumimage']) ? $variables['mediumimage'] : '';
+
+  $variables['classes_array'] = array();
+  $variables['attributes_array'] = array();
+  $variables['title_attributes_array'] = array();
+  $variables['content_attributes_array'] = array();
+  if (!empty($variables['detail']) && $theme_type == 'amazon_detail') {
+    $variables['classes_array'] = array("amazon-item", "amazon-item-detail-{$variables['detail']}");
+  }
+  if (!empty($variables['style']) && $variables['style'] == 'inline' && !empty($variables['producttypename'])) {
+    $variables['theme_hook_suggestions'][] = 'amazon_inline_item__' . _amazon_clean_type($item['producttypename']);
+  }
+  if (!empty($variables['style'])) {
+    $variables['classes'] = _amazon_item_classes($item) . ' amazon-item-' . check_plain($variables['style']);
+
+    // A set of more specific templates to use when displaying items.
+    $variables['theme_hook_suggestions'][] = 'amazon_item__' . $variables['style'];
+    $variables['theme_hook_suggestions'][] = 'amazon_item__' . strtolower($variables['type']);
+    $variables['theme_hook_suggestions'][] = 'amazon_item__' . strtolower($variables['type']) . '__' . $variables['style'];
+
+    if (!empty($item['view']) && !empty($item['view']->name)) {
+      $variables['theme_hook_suggestions'][] = 'amazon_item_view__' . $item['view']->name;
+      $variables['theme_hook_suggestions'][] = 'amazon_item__' . strtolower($variables['type']) . '__view__' . $item['view']->name;
+    }
+  }
+}
+
+//testme();
+
+function sfandfan_menu() {
+    $items['importdata'] = array(
+      'page callback' => 'sfandfan_importData',
+      'access arguments' => array('Import Entity Content'),
+    );
+    $items['importspreadsheet'] = array(
+      'page callback' => 'sfandfan_importSpreadsheet',
+      'access arguments' => array('Import Entity Content'),
+      'file' => 'import.inc',
+    );
+    return $items;
+  }
+
+function sfandfan_permission() {
+  return array(
+      'Import Entity Content' => array(
+        'title' => t('Import Entity Content'),
+        'description' => t('Perform Import Entity Content tasks for sfandfan.'),
+      ),
+    );
+}
+
+function testme() {
+    /*
+$query = new EntityFieldQuery();    
+$query
+ ->entityCondition('entity_type', 'node')
+ ->entityCondition('bundle', 'sf_author')
+ ->propertyCondition('status', 1)
+ ->propertyOrderBy('created', 'DESC');    
+    
+   $result = $query->execute();    
+    
+    _prepost($result); exit;   
+   */ 
+    
+    
+    include_once drupal_get_path('module', 'user') . '/user.module';
+   $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'sf_author')
+    //->fieldCondition('field_isbndb_id', 'value', 'drew', '=')
+    ->propertyCondition('title', 'Ryan Peterson')
+    ->addMetaData('account', user_load(1)); // run the query as user 1
+
+    $result = $query->execute();    
+    
+    _prepost($result); exit;
+
+}
+
+/*
+ * if author already exists, update. otherwise create
+ */
+function sfandfan_create_author($name) {
+    print ' CREATING: ' . $name . '<br>';
+    
+    // http://drupal.org/node/1343708    
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+                    ->entityCondition('bundle', 'sf-author')
+                    //->fieldCondition('title', 'value', 'name', '=')
+                    ->propertyCondition('title', $name)
+                    ->addMetaData('account', user_load(1)); // run the query as user 1
+
+    $result = $query->execute();
+    if (isset($result['node'])) {
+        foreach ($result['node'] as $id => $node) {
+            return $node;            
+        }
+    }    
+    
+    $sf_author = entity_create('node', array('type' => 'sf_author'));
+    $sf_author->title = $name;
+   // _prepost($sf_author); exit;
+    entity_save('node', $sf_author);
+    return $sf_author;
+    
+}
+/*
+ * 
+ */
+function sfandfan_find_content($type, $title) {
+
+    // http://drupal.org/node/1343708    
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+                    ->entityCondition('bundle', $type)  // sf-author
+                    //->fieldCondition('title', 'value', 'name', '=')
+                    ->propertyCondition('title', $title)
+                    ->addMetaData('account', user_load(1)); // run the query as user 1
+
+    $result = $query->execute();
+    if (isset($result['node'])) {
+        foreach ($result['node'] as $id => $node) { print 'found ' . $title; 
+            return $node;            
+        }
+    } 
+    print ' returning nothing for: ' .$title; //exit;
+    return null;
+}
+function sfandfan_form_alter(&$form, &$form_state, $form_id) {
+    //print ' form: ' . $form_id;   exit;
+
+    switch ($form_id) {
+        case 'sf_book_node_form':
+            break;
+        case 'views_exposed_form' :
+         // print render($form);
+          unset($form['captcha']);
+        //$form['tid']['#options'][LANGUAGE_NONE]['#theme'] = 'multicolumn_options_entity_type';
+        //_prepost($form); exit;
+        break;
+    }
+    
+}
+
+?>
